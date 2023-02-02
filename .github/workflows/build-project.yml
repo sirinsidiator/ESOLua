@@ -6,15 +6,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-      - name: Build executable
-        run: make mingw
-      - name: Create output folder
-        run: md output
-      - name: Copy artifacts
-        run: |
-          robocopy src output *.exe *.dll
-          robocopy . output COPYRIGHT HISTORY INSTALL README
-          if ErrorLevel 8 (exit /B 1) else (exit /B 0)
+      - name: Build project
+        run: .\build.bat
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with: 

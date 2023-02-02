@@ -1,1 +1,1 @@
-..\src\lua.exe example1.lua
+..\output\lua.exe example1.lua
