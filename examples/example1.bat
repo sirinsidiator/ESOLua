@@ -1,0 +1,1 @@
+..\src\lua.exe example1.lua
