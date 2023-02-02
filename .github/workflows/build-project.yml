@@ -4,10 +4,6 @@ jobs:
   Build:
     runs-on: windows-latest
     steps:
-      - name: Set up MinGW
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: x64
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Build executable
