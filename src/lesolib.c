@@ -84,26 +84,36 @@ static int eso_compareId64s(eso_id64 a, eso_id64 b)
 
 // actual lib functions
 
+#define debug(active, format, ...)     \
+    if (active)                        \
+    {                                  \
+        printf(format, ##__VA_ARGS__); \
+        printf("\n");                  \
+    }
+
 static int esoL_loadaddon(lua_State *L)
 {
+    const char *relativePath = luaL_checkstring(L, 1);
+    const int showOutput = lua_toboolean(L, 2);
+
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) == NULL)
     {
         lua_pushboolean(L, 0);
-        lua_pushstring(L, "failed to get current working directory");
+        debug(showOutput, "failed to get current working directory");
         return 2;
     }
 
-    const char *relativePath = luaL_checkstring(L, 1);
     char path[strlen(cwd) + strlen(relativePath) + 1];
     sprintf(path, "%s/%s", cwd, relativePath);
 
     FILE *fp = fopen(path, "r");
+    debug(showOutput, "try open manifest file '%s'", path);
 
     if (fp == NULL)
     {
         lua_pushboolean(L, 0);
-        lua_pushstring(L, "invalid manifest path");
+        debug(showOutput, "failed to open manifest file '%s'", path);
         return 2;
     }
 
@@ -127,22 +137,24 @@ static int esoL_loadaddon(lua_State *L)
             continue;
         }
 
+        if (line[strlen(line) - 1] == '\n')
+        {
+            line[strlen(line) - 1] = '\0';
+        }
+
         if (strlen(line) > 4 && strcmp(line + strlen(line) - 4, ".lua") == 0)
         {
             sprintf(fileToLoad, "%s%s", basepath, line);
+            debug(showOutput, "try load Lua file '%s'", fileToLoad);
 
             if (luaL_loadfile(L, fileToLoad) != 0)
             {
-                lua_pushboolean(L, 0);
-                lua_pushstring(L, lua_tostring(L, -1));
-                return 2;
+                debug(showOutput, lua_tostring(L, -1));
             }
 
             if (lua_pcall(L, 0, 0, 0) != 0)
             {
-                lua_pushboolean(L, 0);
-                lua_pushstring(L, lua_tostring(L, -1));
-                return 2;
+                debug(showOutput, lua_tostring(L, -1));
             }
         }
     }
@@ -150,7 +162,6 @@ static int esoL_loadaddon(lua_State *L)
     fclose(fp);
 
     lua_pushboolean(L, 1);
-    lua_pushnil(L);
     return 0;
 }
 
