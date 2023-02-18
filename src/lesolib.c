@@ -101,11 +101,18 @@ static int esoL_loadaddon(lua_State *L)
     {
         lua_pushboolean(L, 0);
         debug(showOutput, "failed to get current working directory");
-        return 2;
+        return 1;
     }
 
     char path[strlen(cwd) + strlen(relativePath) + 1];
     sprintf(path, "%s/%s", cwd, relativePath);
+    for (int i = 0; i < strlen(path); ++i)
+    {
+        if (path[i] == '\\')
+        {
+            path[i] = '/';
+        }
+    }
 
     FILE *fp = fopen(path, "r");
     debug(showOutput, "try open manifest file '%s'", path);
@@ -114,7 +121,7 @@ static int esoL_loadaddon(lua_State *L)
     {
         lua_pushboolean(L, 0);
         debug(showOutput, "failed to open manifest file '%s'", path);
-        return 2;
+        return 1;
     }
 
     char *basepath = strdup(path);
@@ -162,7 +169,7 @@ static int esoL_loadaddon(lua_State *L)
     fclose(fp);
 
     lua_pushboolean(L, 1);
-    return 0;
+    return 1;
 }
 
 static int esoL_stringtoid64(lua_State *L)
