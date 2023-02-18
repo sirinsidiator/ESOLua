@@ -1,8 +1,10 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/time.h>
 
 #define lesolib_c
 #define LUA_LIB
@@ -79,6 +81,24 @@ static int eso_compareId64s(eso_id64 a, eso_id64 b)
     else
     {
         return 0;
+    }
+}
+
+static long eso_getgametimemilliseconds(bool init)
+{
+    static struct timeval startTime;
+    if (init)
+    {
+        gettimeofday(&startTime, NULL);
+        return 0;
+    }
+    else
+    {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        long deltaS = (now.tv_sec - startTime.tv_sec) * 1000;
+        long deltaMS = (now.tv_usec - startTime.tv_usec) / 1000;
+        return deltaS + deltaMS;
     }
 }
 
@@ -213,11 +233,18 @@ static int esoL_compareid64tonumber(lua_State *L)
     return 1;
 }
 
+static int esoL_getgametimemilliseconds(lua_State *L)
+{
+    lua_pushnumber(L, eso_getgametimemilliseconds(false));
+    return 1;
+}
+
 static const luaL_Reg eso_funcs[] = {
     {"StringToId64", esoL_stringtoid64},
     {"Id64ToString", esoL_id64tostring},
     {"CompareId64s", esoL_compareid64s},
     {"CompareId64ToNumber", esoL_compareid64tonumber},
+    {"GetGameTimeMilliseconds", esoL_getgametimemilliseconds},
     {NULL, NULL}};
 
 static const luaL_Reg esolib[] = {
@@ -226,6 +253,8 @@ static const luaL_Reg esolib[] = {
 
 LUALIB_API int luaopen_eso(lua_State *L)
 {
+    eso_getgametimemilliseconds(true);
+
     lua_pushvalue(L, LUA_GLOBALSINDEX);
     luaL_register(L, NULL, eso_funcs);
     lua_pop(L, 1);
