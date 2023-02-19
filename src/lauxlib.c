@@ -66,7 +66,13 @@ LUALIB_API int luaL_typerror (lua_State *L, int narg, const char *tname) {
 
 
 static void tag_error (lua_State *L, int narg, int tag) {
-  luaL_typerror(L, narg, lua_typename(L, tag));
+  const char *msg;
+  if(tag == LUA_TTABLE)  {
+    msg = "table/struct";
+  } else {
+    msg = lua_typename(L, tag);
+  }
+  luaL_typerror(L, narg, msg);
 }
 
 
