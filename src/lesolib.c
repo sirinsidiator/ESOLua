@@ -248,6 +248,29 @@ static int esoL_loadaddon(lua_State *L)
     return 1;
 }
 
+static int esoL_loadluafile(lua_State *L)
+{
+    const char *filePath = luaL_checkstring(L, 1);
+    const int showOutput = lua_toboolean(L, 2);
+
+    char *path = eso_resolvefilepath(filePath, showOutput);
+    if (path == NULL)
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+
+    if (eso_isluafile(path))
+    {
+        eso_tryloadluafile(L, path, showOutput);
+    }
+
+    free(path);
+
+    lua_pushboolean(L, 1);
+    return 1;
+}
+
 static int esoL_stringtoid64(lua_State *L)
 {
     const char *s = luaL_checkstring(L, 1);
@@ -305,6 +328,7 @@ static const luaL_Reg eso_funcs[] = {
 
 static const luaL_Reg esolib[] = {
     {"LoadAddon", esoL_loadaddon},
+    {"LoadLuaFile", esoL_loadluafile},
     {NULL, NULL}};
 
 LUALIB_API int luaopen_eso(lua_State *L)
