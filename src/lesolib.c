@@ -185,6 +185,7 @@ static void eso_tryloadluafile(lua_State *L, const char *fileName, int showOutpu
     if (luaL_loadfile(L, fileName) != 0)
     {
         debug(showOutput, lua_tostring(L, -1));
+        return;
     }
 
     if (lua_pcall(L, 0, 0, 0) != 0)
