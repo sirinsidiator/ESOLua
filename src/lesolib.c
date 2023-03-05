@@ -102,8 +102,6 @@ static long eso_getgametimemilliseconds(bool init)
     }
 }
 
-// actual lib functions
-
 #define debug(active, format, ...)     \
     if (active)                        \
     {                                  \
@@ -111,27 +109,102 @@ static long eso_getgametimemilliseconds(bool init)
         printf("\n");                  \
     }
 
-static int esoL_loadaddon(lua_State *L)
+static bool eso_isrelativepath(const char *filePath)
 {
-    const char *relativePath = luaL_checkstring(L, 1);
-    const int showOutput = lua_toboolean(L, 2);
-
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL)
+    if (filePath[0] == '\\' || filePath[0] == '/')
     {
-        lua_pushboolean(L, 0);
-        debug(showOutput, "failed to get current working directory");
-        return 1;
+        return false;
+    }
+    else if (filePath[1] == ':' && (filePath[2] == '\\' || filePath[2] == '/'))
+    {
+        return false;
+    }
+    return true;
+}
+
+static char *eso_resolvefilepath(const char *filePath, int showOutput)
+{
+    char *result;
+
+    if (eso_isrelativepath(filePath))
+    {
+        char cwd[PATH_MAX];
+        if (getcwd(cwd, sizeof(cwd)) == NULL)
+        {
+            debug(showOutput, "failed to get current working directory");
+            return NULL;
+        }
+
+        char path[strlen(cwd) + strlen(filePath) + 1];
+        sprintf(path, "%s/%s", cwd, filePath);
+
+        result = malloc(strlen(path) + 1);
+        strcpy(result, path);
+    }
+    else
+    {
+        result = malloc(strlen(filePath) + 1);
+        strcpy(result, filePath);
     }
 
-    char path[strlen(cwd) + strlen(relativePath) + 1];
-    sprintf(path, "%s/%s", cwd, relativePath);
-    for (int i = 0; i < strlen(path); ++i)
+    for (int i = 0; i < strlen(result); ++i)
     {
-        if (path[i] == '\\')
+        if (result[i] == '\\')
         {
-            path[i] = '/';
+            result[i] = '/';
         }
+    }
+
+    return result;
+}
+
+static char *eso_getbasepath(const char *filePath)
+{
+    char *basepath = strdup(filePath);
+    char *lastslash = strrchr(basepath, '/');
+    if (lastslash != NULL)
+    {
+        lastslash[1] = '\0';
+    }
+    else
+    {
+        basepath[0] = '\0';
+    }
+    return basepath;
+}
+
+static bool eso_isluafile(const char *fileName)
+{
+    return strlen(fileName) > 4 && strcmp(fileName + strlen(fileName) - 4, ".lua") == 0;
+}
+
+static void eso_tryloadluafile(lua_State *L, const char *fileName, int showOutput)
+{
+    debug(showOutput, "try load Lua file '%s'", fileName);
+
+    if (luaL_loadfile(L, fileName) != 0)
+    {
+        debug(showOutput, lua_tostring(L, -1));
+    }
+
+    if (lua_pcall(L, 0, 0, 0) != 0)
+    {
+        debug(showOutput, lua_tostring(L, -1));
+    }
+}
+
+// actual lib functions
+
+static int esoL_loadaddon(lua_State *L)
+{
+    const char *filePath = luaL_checkstring(L, 1);
+    const int showOutput = lua_toboolean(L, 2);
+
+    char *path = eso_resolvefilepath(filePath, showOutput);
+    if (path == NULL)
+    {
+        lua_pushboolean(L, 0);
+        return 1;
     }
 
     FILE *fp = fopen(path, "r");
@@ -144,16 +217,7 @@ static int esoL_loadaddon(lua_State *L)
         return 1;
     }
 
-    char *basepath = strdup(path);
-    char *lastslash = strrchr(basepath, '/');
-    if (lastslash != NULL)
-    {
-        lastslash[1] = '\0';
-    }
-    else
-    {
-        basepath[0] = '\0';
-    }
+    char *basepath = eso_getbasepath(path);
 
     char line[1024];
     char fileToLoad[1024 + PATH_MAX];
@@ -169,24 +233,16 @@ static int esoL_loadaddon(lua_State *L)
             line[strlen(line) - 1] = '\0';
         }
 
-        if (strlen(line) > 4 && strcmp(line + strlen(line) - 4, ".lua") == 0)
+        if (eso_isluafile(line))
         {
             sprintf(fileToLoad, "%s%s", basepath, line);
-            debug(showOutput, "try load Lua file '%s'", fileToLoad);
-
-            if (luaL_loadfile(L, fileToLoad) != 0)
-            {
-                debug(showOutput, lua_tostring(L, -1));
-            }
-
-            if (lua_pcall(L, 0, 0, 0) != 0)
-            {
-                debug(showOutput, lua_tostring(L, -1));
-            }
+            eso_tryloadluafile(L, fileToLoad, showOutput);
         }
     }
 
     fclose(fp);
+    free(basepath);
+    free(path);
 
     lua_pushboolean(L, 1);
     return 1;
