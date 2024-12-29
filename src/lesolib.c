@@ -332,6 +332,13 @@ static int esoL_getgametimemilliseconds(lua_State *L)
     return 1;
 }
 
+static int esoL_sleep(lua_State *L)
+{
+    lua_Number ms = luaL_checknumber(L, 1);
+    usleep(ms * 1000);
+    return 0;
+}
+
 static const luaL_Reg eso_funcs[] = {
     {"StringToId64", esoL_stringtoid64},
     {"Id64ToString", esoL_id64tostring},
@@ -343,6 +350,7 @@ static const luaL_Reg eso_funcs[] = {
 static const luaL_Reg esolib[] = {
     {"LoadAddon", esoL_loadaddon},
     {"LoadLuaFile", esoL_loadluafile},
+    {"Sleep", esoL_sleep},
     {NULL, NULL}};
 
 LUALIB_API int luaopen_eso(lua_State *L)

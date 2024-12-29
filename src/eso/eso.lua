@@ -91,7 +91,122 @@ internalassert = noop
 -- for globalvars.lua
 function GetWindowManager() return {} end
 function GetAnimationManager() return {} end
-function GetEventManager() return {} end
+
+do
+    local EVENT_MANAGER = {}
+
+    local events = {}
+    function EVENT_MANAGER:RegisterForEvent(namespace, event, callback)
+        if type(namespace) ~= "string" or not event or not callback or (events[event] and events[event][namespace]) then
+            return false
+        end
+
+        events[event] = events[event] or {}
+        events[event][namespace] = callback
+        return true
+    end
+
+    function EVENT_MANAGER:UnregisterForEvent(namespace, event)
+        if type(namespace) == "string" and event and events[event] and events[event][namespace] then
+            events[event][namespace] = nil
+            return true
+        end
+
+        return false
+    end
+
+    local pendingEvents = {}
+    function eso.TriggerEvent(event, ...)
+        if events[event] then
+            for _, callback in pairs(events[event]) do
+                pendingEvents[#pendingEvents + 1] = { callback = callback, args = {event, ...} }
+            end
+        end
+    end
+
+    local updates = {}
+    function EVENT_MANAGER:RegisterForUpdate(namespace, interval, callback)
+        Log("Register for update " .. namespace)
+        if updates[namespace] then
+            Log("Already registered")
+            return false
+        end
+        updates[namespace] = { interval = interval, callback = callback, updateTime = GetGameTimeMilliseconds() + interval }
+        return true
+    end
+
+    function EVENT_MANAGER:UnregisterForUpdate(namespace)
+        Log("Unregister for update " .. namespace)
+        if not updates[namespace] then
+            Log("Not registered")
+            return false
+        end
+        updates[namespace] = nil
+        return true
+    end
+
+    local FRAME_RATE_MS = 1000 / 60
+    function eso.HandleNextFrame()
+        frameTimeMilliseconds = GetGameTimeMilliseconds()
+
+        if #pendingEvents > 0 then
+            Log("Run " .. #pendingEvents .. " pending event handlers")
+            for _, event in pairs(pendingEvents) do
+                local success, err = pcall(event.callback, unpack(event.args))
+                if not success then
+                    print("Error in event handler: " .. err)
+                end
+            end
+            pendingEvents = {}
+        end
+
+        local pendingUpdates = {}
+        local closestUpdateTime = math.huge
+        for _, entry in pairs(updates) do
+            if entry.updateTime <= frameTimeMilliseconds then
+                pendingUpdates[#pendingUpdates + 1] = entry
+            else
+                closestUpdateTime = math.min(closestUpdateTime, entry.updateTime)
+            end
+        end
+
+        if #pendingUpdates > 0 then
+            Log("Run " .. #pendingUpdates .. " pending updates")
+            for _, entry in pairs(pendingUpdates) do
+                entry.callback()
+                entry.updateTime = GetGameTimeMilliseconds() + entry.interval
+            end
+        end
+
+        local futureUpdateCount = 0
+        for _, entry in pairs(updates) do
+            futureUpdateCount = futureUpdateCount + 1
+        end
+
+        if futureUpdateCount > 0 or #pendingEvents > 0 then
+            Log("Waiting for " .. futureUpdateCount .. " updates and " .. #pendingEvents .. " events")
+            if futureUpdateCount > 0 then
+                local framesToWait = math.ceil((closestUpdateTime - frameTimeMilliseconds) / FRAME_RATE_MS)
+                local timeToWait = framesToWait * FRAME_RATE_MS
+                Log(string.format("Next update in %.0fms, skipping %d frames", timeToWait, framesToWait - 1))
+                eso.Sleep(timeToWait)
+            else
+                eso.Sleep(FRAME_RATE_MS)
+            end
+            return eso.HandleNextFrame()
+        else
+            Log("No updates to wait for")
+        end
+    end
+
+    function eso.ClearAllEventsAndUpdates()
+        Log("Removing all pending events and updates")
+        updates = {}
+        pendingEvents = {}
+    end
+
+    function GetEventManager() return EVENT_MANAGER end
+end
 
 -- for defaultcolordefs.lua
 function GetInterfaceColor() return 1, 1, 1, 1 end
