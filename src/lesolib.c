@@ -189,20 +189,23 @@ static bool eso_isluafile(const char *fileName)
     return strlen(fileName) > 4 && strcmp(fileName + strlen(fileName) - 4, ".lua") == 0;
 }
 
-static void eso_tryloadluafile(lua_State *L, const char *fileName)
+static bool eso_tryloadluafile(lua_State *L, const char *fileName)
 {
     eso_log("try load Lua file '%s'", fileName);
 
     if (luaL_loadfile(L, fileName) != 0)
     {
         eso_log(lua_tostring(L, -1));
-        return;
+        return false;
     }
 
     if (lua_pcall(L, 0, 0, 0) != 0)
     {
         eso_log(lua_tostring(L, -1));
+        return false;
     }
+
+    return true;
 }
 
 // actual lib functions
@@ -270,14 +273,15 @@ static int esoL_loadluafile(lua_State *L)
         return 1;
     }
 
+    bool success = false;
     if (eso_isluafile(path))
     {
-        eso_tryloadluafile(L, path);
+        success = eso_tryloadluafile(L, path);
     }
 
     free(path);
 
-    lua_pushboolean(L, 1);
+    lua_pushboolean(L, success ? 1 : 0);
     return 1;
 }
 
