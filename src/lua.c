@@ -46,6 +46,7 @@ static void print_usage (void) {
   "Available options are:\n"
   "  -e stat  execute string " LUA_QL("stat") "\n"
   "  -l name  require library " LUA_QL("name") "\n"
+  "  -s path  set path to ESOUI source code\n"
   "  -d       show debug output for ESO related features\n"
   "  -i       enter interactive mode after executing " LUA_QL("script") "\n"
   "  -v       show version information\n"
@@ -284,6 +285,7 @@ static int collectargs (char **argv, int *pi, int *pv, int *pe) {
       case 'e':
         *pe = 1;  /* go through */
       case 'l':
+      case 's':
         if (argv[i][2] == '\0') {
           i++;
           if (argv[i] == NULL) return -1;
@@ -336,6 +338,14 @@ static void prepare_esolua_options(lua_State *L, char **argv) {
       case '-':
       case '\0':
         return;
+      case 's': {
+        const char *path = argv[i] + 2;
+        if (*path == '\0') path = argv[++i];
+        lua_assert(path != NULL);
+        lua_pushstring(L, path);
+        lua_setglobal(L, "ESOUI_SOURCE_PATH");
+        break;
+      }
       case 'd': {
         lua_pushboolean(L, 1);
         lua_setglobal(L, "ESOUI_DEBUG");
