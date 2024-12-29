@@ -102,12 +102,23 @@ static long eso_getgametimemilliseconds(bool init)
     }
 }
 
-#define debug(active, format, ...)     \
-    if (active)                        \
-    {                                  \
-        printf(format, ##__VA_ARGS__); \
-        printf("\n");                  \
+int show_debug_output = 0;
+LUA_API void eso_set_debug_enabled(int enable)
+{
+    show_debug_output = enable;
+}
+
+static void eso_log(const char *format, ...)
+{
+    if (show_debug_output)
+    {
+        va_list args;
+        va_start(args, format);
+        vprintf(format, args);
+        printf("\n");
+        va_end(args);
     }
+}
 
 static bool eso_isrelativepath(const char *filePath)
 {
@@ -122,7 +133,7 @@ static bool eso_isrelativepath(const char *filePath)
     return true;
 }
 
-static char *eso_resolvefilepath(const char *filePath, int showOutput)
+static char *eso_resolvefilepath(const char *filePath)
 {
     char *result;
 
@@ -131,7 +142,7 @@ static char *eso_resolvefilepath(const char *filePath, int showOutput)
         char cwd[PATH_MAX];
         if (getcwd(cwd, sizeof(cwd)) == NULL)
         {
-            debug(showOutput, "failed to get current working directory");
+            eso_log("failed to get current working directory");
             return NULL;
         }
 
@@ -178,19 +189,19 @@ static bool eso_isluafile(const char *fileName)
     return strlen(fileName) > 4 && strcmp(fileName + strlen(fileName) - 4, ".lua") == 0;
 }
 
-static void eso_tryloadluafile(lua_State *L, const char *fileName, int showOutput)
+static void eso_tryloadluafile(lua_State *L, const char *fileName)
 {
-    debug(showOutput, "try load Lua file '%s'", fileName);
+    eso_log("try load Lua file '%s'", fileName);
 
     if (luaL_loadfile(L, fileName) != 0)
     {
-        debug(showOutput, lua_tostring(L, -1));
+        eso_log(lua_tostring(L, -1));
         return;
     }
 
     if (lua_pcall(L, 0, 0, 0) != 0)
     {
-        debug(showOutput, lua_tostring(L, -1));
+        eso_log(lua_tostring(L, -1));
     }
 }
 
@@ -199,9 +210,8 @@ static void eso_tryloadluafile(lua_State *L, const char *fileName, int showOutpu
 static int esoL_loadaddon(lua_State *L)
 {
     const char *filePath = luaL_checkstring(L, 1);
-    const int showOutput = lua_toboolean(L, 2);
 
-    char *path = eso_resolvefilepath(filePath, showOutput);
+    char *path = eso_resolvefilepath(filePath);
     if (path == NULL)
     {
         lua_pushboolean(L, 0);
@@ -209,12 +219,12 @@ static int esoL_loadaddon(lua_State *L)
     }
 
     FILE *fp = fopen(path, "r");
-    debug(showOutput, "try open manifest file '%s'", path);
+    eso_log("try open manifest file '%s'", path);
 
     if (fp == NULL)
     {
         lua_pushboolean(L, 0);
-        debug(showOutput, "failed to open manifest file '%s'", path);
+        eso_log("failed to open manifest file '%s'", path);
         return 1;
     }
 
@@ -237,7 +247,7 @@ static int esoL_loadaddon(lua_State *L)
         if (eso_isluafile(line))
         {
             sprintf(fileToLoad, "%s%s", basepath, line);
-            eso_tryloadluafile(L, fileToLoad, showOutput);
+            eso_tryloadluafile(L, fileToLoad);
         }
     }
 
@@ -252,9 +262,8 @@ static int esoL_loadaddon(lua_State *L)
 static int esoL_loadluafile(lua_State *L)
 {
     const char *filePath = luaL_checkstring(L, 1);
-    const int showOutput = lua_toboolean(L, 2);
 
-    char *path = eso_resolvefilepath(filePath, showOutput);
+    char *path = eso_resolvefilepath(filePath);
     if (path == NULL)
     {
         lua_pushboolean(L, 0);
@@ -263,7 +272,7 @@ static int esoL_loadluafile(lua_State *L)
 
     if (eso_isluafile(path))
     {
-        eso_tryloadluafile(L, path, showOutput);
+        eso_tryloadluafile(L, path);
     }
 
     free(path);

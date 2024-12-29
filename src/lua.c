@@ -45,6 +45,7 @@ static void print_usage (void) {
   "Available options are:\n"
   "  -e stat  execute string " LUA_QL("stat") "\n"
   "  -l name  require library " LUA_QL("name") "\n"
+  "  -d       show debug output for ESO related features\n"
   "  -i       enter interactive mode after executing " LUA_QL("script") "\n"
   "  -v       show version information\n"
   "  --       stop handling options\n"
@@ -275,6 +276,10 @@ static int collectargs (char **argv, int *pi, int *pv, int *pe) {
       case 'v':
         notail(argv[i]);
         *pv = 1;
+        break;
+      case 'd':
+        notail(argv[i]);
+        eso_set_debug_enabled(1);
         break;
       case 'e':
         *pe = 1;  /* go through */
