@@ -571,6 +571,11 @@ LUALIB_API int luaL_loadfile (lua_State *L, const char *filename) {
     if (lf.f == NULL) return errfile(L, "open", fnameindex);
   }
   c = getc(lf.f);
+  if (c == 0xEF) { /* skip UTF-8 BOM */
+    if (getc(lf.f) != 0xBB) return errfile(L, "read", fnameindex);
+    if (getc(lf.f) != 0xBF) return errfile(L, "read", fnameindex);
+    c = getc(lf.f);
+  }
   if (c == '#') {  /* Unix exec. file? */
     lf.extraline = 1;
     while ((c = getc(lf.f)) != EOF && c != '\n') ;  /* skip first line */
