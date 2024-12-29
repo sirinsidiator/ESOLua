@@ -16,6 +16,7 @@
 
 #include "lauxlib.h"
 #include "lualib.h"
+#include "eso_lua.h"
 
 
 
@@ -279,7 +280,6 @@ static int collectargs (char **argv, int *pi, int *pv, int *pe) {
         break;
       case 'd':
         notail(argv[i]);
-        eso_set_debug_enabled(1);
         break;
       case 'e':
         *pe = 1;  /* go through */
@@ -325,6 +325,40 @@ static int runargs (lua_State *L, char **argv, int n) {
 }
 
 
+static void prepare_esolua_options(lua_State *L, char **argv) {
+  lua_pushstring(L, "esoui");
+  lua_setglobal(L, "ESOUI_SOURCE_PATH");
+
+  int i;
+  for (i = 1; argv[i] != NULL; i++) {
+    if(argv[i][0] != '-') continue;
+    switch (argv[i][1]) {  /* option */
+      case '-':
+      case '\0':
+        return;
+      case 'd': {
+        lua_pushboolean(L, 1);
+        lua_setglobal(L, "ESOUI_DEBUG");
+        eso_set_debug_enabled(1);
+        break;
+      }
+      default: break;
+    }
+  }
+}
+
+
+static int handle_esoluainit (lua_State *L, char **argv)
+{
+  prepare_esolua_options(L, argv);
+  int result = dostring(L, (const char *)eso_lua, "@eso.lua");
+  if (result != 0) {
+    fprintf(stderr, "Error loading script: %s\n", lua_tostring(L, -1));
+  }
+  return result;
+}
+
+
 static int handle_luainit (lua_State *L) {
   const char *init = getenv(LUA_INIT);
   if (init == NULL) return 0;  /* status OK */
@@ -352,6 +386,8 @@ static int pmain (lua_State *L) {
   lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
   luaL_openlibs(L);  /* open libraries */
   lua_gc(L, LUA_GCRESTART, 0);
+  s->status = handle_esoluainit(L, argv);
+  if (s->status != 0) return 0;
   s->status = handle_luainit(L);
   if (s->status != 0) return 0;
   script = collectargs(argv, &has_i, &has_v, &has_e);

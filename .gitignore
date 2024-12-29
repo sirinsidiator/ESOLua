@@ -3,3 +3,4 @@
 *.exe
 *.a
 /output
+/src/eso_lua.h

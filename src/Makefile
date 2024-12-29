@@ -28,6 +28,7 @@ CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
 	lundump.o lvm.o lzio.o
 LIB_O=	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o \
 	lstrlib.o loadlib.o lesolib.o linit.o
+ESO_LUA_H= eso_lua.h
 
 LUA_T=	lua
 LUA_O=	lua.o
@@ -56,6 +57,9 @@ $(LUA_T): $(LUA_O) $(LUA_A)
 
 $(LUAC_T): $(LUAC_O) $(LUA_A)
 	$(CC) -o $@ $(MYLDFLAGS) $(LUAC_O) $(LUA_A) $(LIBS)
+
+$(ESO_LUA_H): eso/eso.lua
+	cd eso && xxd -i eso.lua > ../$@ && cd ..
 
 clean:
 	$(RM) $(ALL_T) $(ALL_O)
@@ -167,7 +171,7 @@ ltablib.o: ltablib.c lua.h luaconf.h lauxlib.h lualib.h
 lesolib.o: lesolib.c lua.h luaconf.h lapi.h lauxlib.h lualib.h
 ltm.o: ltm.c lua.h luaconf.h lobject.h llimits.h lstate.h ltm.h lzio.h \
   lmem.h lstring.h lgc.h ltable.h
-lua.o: lua.c lua.h luaconf.h lauxlib.h lualib.h
+lua.o: lua.c lua.h luaconf.h lauxlib.h lualib.h eso_lua.h
 luac.o: luac.c lua.h luaconf.h lauxlib.h ldo.h lobject.h llimits.h \
   lstate.h ltm.h lzio.h lmem.h lfunc.h lopcodes.h lstring.h lgc.h \
   lundump.h
