@@ -168,7 +168,7 @@ lstrlib.o: lstrlib.c lua.h luaconf.h lauxlib.h lualib.h
 ltable.o: ltable.c lua.h luaconf.h ldebug.h lstate.h lobject.h llimits.h \
   ltm.h lzio.h lmem.h ldo.h lgc.h ltable.h
 ltablib.o: ltablib.c lua.h luaconf.h lauxlib.h lualib.h
-lesolib.o: lesolib.c lua.h luaconf.h lapi.h lauxlib.h lualib.h
+lesolib.o: lesolib.c lua.h luaconf.h lapi.h lauxlib.h lualib.h eso/id64.c
 ltm.o: ltm.c lua.h luaconf.h lobject.h llimits.h lstate.h ltm.h lzio.h \
   lmem.h lstring.h lgc.h ltable.h
 lua.o: lua.c lua.h luaconf.h lauxlib.h lualib.h eso_lua.h
