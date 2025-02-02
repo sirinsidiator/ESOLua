@@ -199,6 +199,12 @@ static const luaL_Reg eso_funcs[] = {
     {"Id64ToString", esoL_id64tostring},
     {"CompareId64s", esoL_compareid64s},
     {"CompareId64ToNumber", esoL_compareid64tonumber},
+    {"BitAnd", esoL_bitAnd},
+    {"BitOr", esoL_bitOr},
+    {"BitXor", esoL_bitXor},
+    {"BitNot", esoL_bitNot},
+    {"BitLShift", esoL_bitLShift},
+    {"BitRShift", esoL_bitRShift},
     {"GetGameTimeMilliseconds", esoL_getgametimemilliseconds},
     {NULL, NULL}};
 

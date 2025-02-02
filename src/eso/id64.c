@@ -89,3 +89,71 @@ static int esoL_compareid64tonumber(lua_State *L) {
   lua_pushnumber(L, result);
   return 1;
 }
+
+// implementation of the available bitwise operations
+static int esoL_bitAnd(lua_State *L) {
+  lua_Number a = luaL_checknumber(L, 1);
+  lua_Number b = luaL_checknumber(L, 2);
+  eso_id64 a_ = (eso_id64)a;
+  eso_id64 b_ = (eso_id64)b;
+  lua_Number result = (lua_Number)(a_ & b_);
+  lua_pushnumber(L, result);
+  return 1;
+}
+
+static int esoL_bitOr(lua_State *L) {
+  lua_Number a = luaL_checknumber(L, 1);
+  lua_Number b = luaL_checknumber(L, 2);
+  eso_id64 a_ = (eso_id64)a;
+  eso_id64 b_ = (eso_id64)b;
+  lua_Number result = (lua_Number)(a_ | b_);
+  lua_pushnumber(L, result);
+  return 1;
+}
+
+static int esoL_bitXor(lua_State *L) {
+  lua_Number a = luaL_checknumber(L, 1);
+  lua_Number b = luaL_checknumber(L, 2);
+  eso_id64 a_ = (eso_id64)a;
+  eso_id64 b_ = (eso_id64)b;
+  lua_Number result = (lua_Number)(a_ ^ b_);
+  lua_pushnumber(L, result);
+  return 1;
+}
+
+static int esoL_bitNot(lua_State *L) {
+  int n = lua_gettop(L); /* number of arguments */
+  lua_Number a = luaL_checknumber(L, 1);
+  eso_id64 numBits = 53; // 0x1FFFFFFFFFFFFF
+  if (n > 1) {
+    numBits = (eso_id64)luaL_checknumber(L, 2);
+    if (numBits < 1 || numBits > 53) {
+      numBits = 53;
+    }
+  }
+  eso_id64 a_ = (eso_id64)a;
+  eso_id64 mask = ((eso_id64)1 << numBits) - 1;
+  lua_Number result = (lua_Number)((~a_) & mask);
+  lua_pushnumber(L, result);
+  return 1;
+}
+
+static int esoL_bitLShift(lua_State *L) {
+  lua_Number a = luaL_checknumber(L, 1);
+  lua_Number b = luaL_checknumber(L, 2);
+  eso_id64 a_ = (eso_id64)a;
+  eso_id64 b_ = (eso_id64)b;
+  lua_Number result = (lua_Number)(a_ << b_);
+  lua_pushnumber(L, result);
+  return 1;
+}
+
+static int esoL_bitRShift(lua_State *L) {
+  lua_Number a = luaL_checknumber(L, 1);
+  lua_Number b = luaL_checknumber(L, 2);
+  eso_id64 a_ = (eso_id64)a;
+  eso_id64 b_ = (eso_id64)b;
+  lua_Number result = (lua_Number)(a_ >> b_);
+  lua_pushnumber(L, result);
+  return 1;
+}
