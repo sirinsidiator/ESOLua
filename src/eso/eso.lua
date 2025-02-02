@@ -107,6 +107,10 @@ do
         return true
     end
 
+    function EVENT_MANAGER:AddFilterForEvent(namespace, ...)
+        return false
+    end
+
     function EVENT_MANAGER:UnregisterForEvent(namespace, event)
         if type(namespace) == "string" and event and events[event] and events[event][namespace] then
             events[event][namespace] = nil
