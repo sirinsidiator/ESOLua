@@ -66,6 +66,7 @@ end
 
 -- for time.lua
 local frameTimeMilliseconds = 0
+function GetTimeStamp() return math.floor(GetGameTimeMilliseconds() / 1000) end
 function GetFrameTimeMilliseconds() return frameTimeMilliseconds end
 function GetFrameTimeSeconds() return frameTimeMilliseconds / 1000 end
 function GetGameTimeSeconds() return GetGameTimeMilliseconds() / 1000 end 
