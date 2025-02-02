@@ -45,13 +45,6 @@ static eso_id64 eso_convertId64StringToId64(const char *str)
     return strtoull(str, &s, 10);
 }
 
-static eso_id64 eso_convertNumberToId64(lua_Number value)
-{
-    char s[LUAI_MAXNUMBER2STR];
-    sprintf(s, "%.f", value); // TODO ensure that number is in range of 64bit
-    return eso_convertId64StringToId64(s);
-}
-
 static int eso_compareId64s(eso_id64 a, eso_id64 b)
 {
     if (a < b)
@@ -103,7 +96,7 @@ static int esoL_compareid64tonumber(lua_State *L)
     lua_Number a = luaL_checknumber(L, 1);
     lua_Number b = luaL_checknumber(L, 2);
     eso_id64 a_ = eso_reinterpretNumberAsId64(a);
-    eso_id64 b_ = eso_convertNumberToId64(b);
+    eso_id64 b_ = (eso_id64) b;
     int result = eso_compareId64s(a_, b_);
     lua_pushnumber(L, result);
     return 1;
