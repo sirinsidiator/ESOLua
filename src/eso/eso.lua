@@ -131,7 +131,7 @@ do
 
     local updates = {}
     function EVENT_MANAGER:RegisterForUpdate(namespace, interval, callback)
-        Log("Register for update " .. namespace)
+        Log("Register for update " .. namespace .. " with interval " .. interval)
         if updates[namespace] then
             Log("Already registered")
             return false
@@ -166,12 +166,9 @@ do
         end
 
         local pendingUpdates = {}
-        local closestUpdateTime = math.huge
         for _, entry in pairs(updates) do
             if entry.updateTime <= frameTimeMilliseconds then
                 pendingUpdates[#pendingUpdates + 1] = entry
-            else
-                closestUpdateTime = math.min(closestUpdateTime, entry.updateTime)
             end
         end
 
@@ -184,8 +181,12 @@ do
         end
 
         local futureUpdateCount = 0
+        local closestUpdateTime = math.huge
         for _, entry in pairs(updates) do
-            futureUpdateCount = futureUpdateCount + 1
+            if entry.updateTime > frameTimeMilliseconds then
+                closestUpdateTime = math.min(closestUpdateTime, entry.updateTime)
+                futureUpdateCount = futureUpdateCount + 1
+            end
         end
 
         if futureUpdateCount > 0 or #pendingEvents > 0 then
