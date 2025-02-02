@@ -101,6 +101,24 @@ int luaO_str2d (const char *s, lua_Number *result) {
 
 
 
+int luaO_utf8esc (char *buff, unsigned long x) {
+  int n = 1;  /* number of bytes put in buffer (backwards) */
+  lua_assert(x <= 0x10FFFF);
+  if (x < 0x80)  /* ascii? */
+    buff[UTF8BUFFSZ - 1] = cast(char, x);
+  else {  /* need continuation bytes */
+    unsigned int mfb = 0x3f;  /* maximum that fits in first byte */
+    do {  /* add continuation bytes */
+      buff[UTF8BUFFSZ - (n++)] = cast(char, 0x80 | (x & 0x3f));
+      x >>= 6;  /* remove added bits */
+      mfb >>= 1;  /* now there is one less bit available in first byte */
+    } while (x > mfb);  /* still needs continuation byte? */
+    buff[UTF8BUFFSZ - n] = cast(char, (~mfb << 1) | x);  /* add first byte */
+  }
+  return n;
+}
+
+
 static void pushstr (lua_State *L, const char *str) {
   setsvalue2s(L, L->top, luaS_new(L, str));
   incr_top(L);
@@ -144,6 +162,13 @@ const char *luaO_pushvfstring (lua_State *L, const char *fmt, va_list argp) {
         char buff[4*sizeof(void *) + 8]; /* should be enough space for a `%p' */
         sprintf(buff, "%p", va_arg(argp, void *));
         pushstr(L, buff);
+        break;
+      }
+      case 'U': {  /* an 'int' as a UTF-8 sequence */
+        char buff[UTF8BUFFSZ];
+        int l = luaO_utf8esc(buff, cast(long, va_arg(argp, long)));
+        setsvalue2s(L, L->top, luaS_newlstr(L, buff + UTF8BUFFSZ - l, l));
+        incr_top(L);
         break;
       }
       case '%': {
