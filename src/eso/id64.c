@@ -127,7 +127,7 @@ static int esoL_bitNot(lua_State *L) {
   eso_id64 numBits = 53; // 0x1FFFFFFFFFFFFF
   if (n > 1) {
     numBits = (eso_id64)luaL_checknumber(L, 2);
-    if (numBits < 1 || numBits > 53) {
+    if (numBits < 0 || numBits > 53) {
       numBits = 53;
     }
   }
