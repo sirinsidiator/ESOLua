@@ -17,7 +17,7 @@
 
 
 #define LUA_VERSION	"ESOLua"
-#define LUA_RELEASE	"ESOLua (based on Lua 5.1.5)"
+#define LUA_RELEASE	"ESOLua 1.1.0 (based on Lua 5.1.5, ESO 10.3)"
 #define LUA_VERSION_NUM	501
 #define LUA_COPYRIGHT	"Copyright (C) 1994-2012 Lua.org, PUC-Rio"
 #define LUA_AUTHORS 	"R. Ierusalimschy, L. H. de Figueiredo & W. Celes"
