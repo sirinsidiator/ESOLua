@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            make_target: mingw
+          - os: ubuntu-latest
+            platform: linux
+            make_target: linux
+          - os: macos-latest
+            platform: macos
+            make_target: macosx
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreadline-dev libncurses-dev
+
+      - name: Install dependencies (macOS)
+        if: matrix.platform == 'macos'
+        run: brew install readline
+
+      - name: Build project
+        run: make ${{ matrix.make_target }}
+
+      - name: Prepare output (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path output
+          Copy-Item src/lua.exe output/esolua.exe
+          Copy-Item src/luac.exe output/esoluac.exe
+          Copy-Item src/lua51.dll output/
+          Copy-Item README output/Lua-README.txt
+          Copy-Item README.md output/ESOLua-README.md
+          Copy-Item COPYRIGHT, HISTORY, INSTALL output/
+
+      - name: Prepare output (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          mkdir -p output
+          cp src/lua output/esolua
+          cp src/luac output/esoluac
+          cp README output/Lua-README.txt
+          cp README.md output/ESOLua-README.md
+          cp COPYRIGHT HISTORY INSTALL output/
+
+      - name: Create zip archive
+        shell: bash
+        run: |
+          cd output
+          zip -r ../ESOLua-${{ github.ref_name }}-${{ matrix.platform }}.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ESOLua-${{ matrix.platform }}
+          path: ESOLua-${{ github.ref_name }}-${{ matrix.platform }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.zip
+          generate_release_notes: true
