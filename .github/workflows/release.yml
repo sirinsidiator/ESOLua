@@ -43,8 +43,8 @@ jobs:
           Copy-Item src/lua.exe output/esolua.exe
           Copy-Item src/luac.exe output/esoluac.exe
           Copy-Item src/lua51.dll output/
-          Copy-Item README output/Lua-README.txt
-          Copy-Item README.md output/ESOLua-README.md
+          Copy-Item README output/README-Lua.txt
+          Copy-Item README.md output/README-ESOLua.md
           Copy-Item COPYRIGHT, HISTORY, INSTALL output/
 
       - name: Prepare output (Linux/macOS)
@@ -53,8 +53,8 @@ jobs:
           mkdir -p output
           cp src/lua output/esolua
           cp src/luac output/esoluac
-          cp README output/Lua-README.txt
-          cp README.md output/ESOLua-README.md
+          cp README output/README-Lua.txt
+          cp README.md output/README-ESOLua.md
           cp COPYRIGHT HISTORY INSTALL output/
 
       - name: Create zip archive (Windows)
