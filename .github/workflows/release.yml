@@ -32,10 +32,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libreadline-dev libncurses-dev
 
-      - name: Install dependencies (macOS)
-        if: matrix.platform == 'macos'
-        run: brew install readline
-
       - name: Build project
         run: make ${{ matrix.make_target }}
 
@@ -61,8 +57,14 @@ jobs:
           cp README.md output/ESOLua-README.md
           cp COPYRIGHT HISTORY INSTALL output/
 
-      - name: Create zip archive
-        shell: bash
+      - name: Create zip archive (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path output/* -DestinationPath ESOLua-${{ github.ref_name }}-${{ matrix.platform }}.zip
+
+      - name: Create zip archive (Linux/macOS)
+        if: matrix.platform != 'windows'
         run: |
           cd output
           zip -r ../ESOLua-${{ github.ref_name }}-${{ matrix.platform }}.zip .
